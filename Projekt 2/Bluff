@@ -1,1 +1,219 @@
-
+import numpy as np
+import string
+ 
+slownik = {"a":[1,1],"b":[1,2],"c":[1,3],"d":[1,4],"e":[2,1],"f":[2,2],"g":[2,3],"h":[2,4],"i":[0],"j":[0,"slabo"]}
+ 
+    # funkcja odpowiadająca za tworzenie słownika sekwencji zagrywek
+def create_variables():
+    def add_possibilities(s):
+        length = len(s)
+        if len(s) == 1:
+            for i in range(9):
+                result[length].append(s + letters[i])
+        else:
+            begin = letters.index(s[length - 1]) + 1
+            for i in range(begin, 9):
+                result[length].append(s + letters[i])
+    letters = list(string.ascii_lowercase[0:9])
+    result = {i:[] for i in range(10)}
+    result[0] = ['1','2','3','4']
+    for i in range(9):
+        for s in result[i]:
+            add_possibilities(s)
+    return result
+ 
+ 
+gra = create_variables()
+gracz1 = []
+gracz2 = []
+ 
+for j in range(5):
+    for i in range(len(gra[2*j+1])):
+        gracz1.append(gra[2*j+1][i])
+ 
+for j in range(0,5):
+    for i in range(len(gra[2*j])):
+        gracz2.append(gra[2*j][i])
+   
+    #funkcja zwracająca wartość oczekiwaną wypłaty w przypadku węzła - jako wypadkowej dwóch sekwencji.
+    #przy jej pomocy tworzona jest macierz M
+def payoff_value(str1,str2,blef):
+    if ((len(str1)==len(str2)+1 and str1[0:len(str1)-1]==str2) and str1[len(str1)-1]==blef):
+        if(len(str2)>1):
+            k = str2[len(str2)-1]
+        else:
+            k="j"
+        gracz = -2*(len(str2)%2)+1
+        ile = slownik[k][0]
+        kosc = slownik[k][1]
+        poczatek = int(str1[0])
+       
+        ### te same
+        if(kosc == "slabo"):
+            return -1*gracz
+        if(poczatek == kosc and ile==1):
+            #print("tak1")
+            return 1*gracz
+        if(poczatek == kosc and ile==2 and kosc == 1):
+            return -1/2*gracz
+        if(poczatek == kosc and ile==2 and kosc != 1):
+            return 0*gracz
+       
+        ### rozne, ile == 1
+        if(poczatek != kosc and ile == 1 and poczatek ==1):
+            return 1*gracz
+        if(poczatek != kosc and ile == 1 and poczatek != 1 and kosc != 1):
+            return 0
+        if(poczatek != kosc and ile == 1 and poczatek != 1 and kosc == 1):
+            return -1/2*gracz
+       
+        ### rozne, ile == 2
+        if(poczatek != kosc and poczatek != 1):
+            return -1*gracz        
+        if(poczatek == 1 and ile == 2 and kosc !=1):
+            return 0
+       
+    if ((len(str2)==len(str1)+1 and str2[0:len(str2)-1]==str1) and str2[len(str2)-1]==blef):
+        if(len(str1)>1):
+            k = str1[len(str1)-1]
+        else:
+            k="j"
+        gracz = -2*(len(str1)%2)+1
+        ile = slownik[k][0]
+        kosc = slownik[k][1]
+        poczatek = int(str1[0])
+       
+        ### te same
+        if(kosc=="slabo"):
+            return -1*gracz
+        if(poczatek == kosc and ile==1):
+            #print("tak2")
+            return 1*gracz
+        if(poczatek == kosc and ile==2 and kosc == 1):
+            return -1/2*gracz
+        if(poczatek == kosc and ile==2 and kosc != 1):
+            return 0*gracz
+       
+        ### rozne, ile == 1
+        if(poczatek != kosc and ile == 1 and poczatek ==1):
+            return 1*gracz
+        if(poczatek != kosc and ile == 1 and poczatek != 1 and kosc != 1):
+            return 0
+        if(poczatek != kosc and ile == 1 and poczatek != 1 and kosc == 1):
+            return -1/2*gracz
+       
+        ### rozne, ile == 2
+        if(poczatek != kosc and poczatek != 1):
+            return -1*gracz        
+        if(poczatek == 1 and ile == 2 and kosc !=1):
+            return 0
+ 
+    else:
+        return 0
+     #konstrukcja ograniczeń z perspektywy gracza 2
+def add_constraints_player_2():
+    result = np.zeros((4, len(gracz2)))
+    for i in range(4):
+        result[i, i] = 1
+    for i in (0,2,4,6):
+        for s in gra[i]:
+            empty = True
+            constraint = np.zeros((1, len(gracz2)))
+            for t in gra[i + 2]:
+                if (t[0:len(t) - 2] == s):
+                    empty = False
+                    constraint[0, gracz2.index(t)] = 1
+            if(not empty):
+                constraint[0, gracz2.index(s)] = -1
+                result = np.vstack((result, constraint))
+    bounds = np.zeros((1, result.shape[0]))
+    for i in range(4):
+        bounds[0, i] = 0.25
+    return [result, bounds]
+ 
+    #konstrukcja ograniczeń z perspektywy gracza 1
+def add_constraints_player_1():
+    result = np.zeros((1, len(gracz2)))
+    for s in gra[1]:
+        result[0, gracz1.index(s)] = 1
+    for i in (1,3,5,7):
+        for s in gra[i]:
+            empty = True
+            constraint = np.zeros((1, len(gracz1)))
+            for t in gra[i + 2]:
+                if(t[0:len(t) - 2] == s):
+                    empty = False
+                    constraint[0, gracz1.index(t)] = 1
+            if(not empty):
+                constraint[0, gracz1.index(s)] = -1
+                result = np.vstack((result, constraint))
+    bounds = np.zeros((1, result.shape[0]))
+    bounds[0, 0] = 1
+    return [result, bounds]
+     
+    #problem dualny 1.
+def solve_problem_1():
+    #Przygotowanie inputu do problemu liniowego
+    M = np.zeros((len(gracz1),len(gracz2)))
+    for i in range(len(gracz1)):
+        for j in range(len(gracz2)):
+            M[i, j]=payoff_value(gracz1[i],gracz2[j],"i")
+    M = np.transpose(M)    
+    tmp = add_constraints_player_2()
+    A = tmp[0]
+    A = np.transpose(-A)
+    b = tmp[1]
+    tmp = add_constraints_player_1()
+    E = tmp[0]
+    d = tmp[1]
+    constraint_matrix = np.hstack((A, M))
+    constraint_matrix = np.vstack((constraint_matrix, np.hstack((np.zeros((E.shape[0], A.shape[1])), E))))
+    P = MixedIntegerLinearProgram(maximization = True)
+    var = P.new_variable(real = True, nonnegative = True)
+    variables = ["z" + str(i) for i in range(1, 261)]
+    variables = variables + gracz1
+    bounds = np.zeros((1, M.shape[0]))
+    bounds = np.hstack((bounds, d))
+    #print("3")
+    P.set_objective(sum(var[variables[k]]* b[0, k] for k in range(b.shape[1])))
+    for i in range(bounds.shape[1]):
+        P.add_constraint(sum(var[variables[k]] * constraint_matrix[i, k] for k in range(len(variables))), min = bounds[0, i])
+        P.add_constraint(sum(var[variables[k]] * constraint_matrix[i, k] for k in range(len(variables))), max = bounds[0, i])
+        if(i%50==0):
+            print i
+    print('Optymalna wartość funkcji celu = ', P.solve())
+    return result
+ 
+    #problem dualny 2. W kodzie znajduje się bug, którego - z racji na presję czasu - nie udało nam się zidentyfikować.
+def solve_problem_2():
+    #Przygotowanie inputu do problemu liniowego
+    M = np.zeros((len(gracz1),len(gracz2)))
+    for i in range(len(gracz1)):
+        for j in range(len(gracz2)):
+            M[i, j]=payoff_value(gracz1[i],gracz2[j],"i")
+    tmp = add_constraints_player_2()
+    A = tmp[0]
+    b = tmp[1]
+    tmp = add_constraints_player_1()
+    E = tmp[0]
+    E = np.transpose(-E)
+    d = tmp[1]
+    constraint_matrix = np.hstack((E, M))
+    constraint_matrix = np.vstack((constraint_matrix, np.hstack((np.zeros((A.shape[0], E.shape[1])), A))))
+    P = MixedIntegerLinearProgram(maximization = False)
+    var = P.new_variable(real = True, nonnegative = True)
+    variables = ["z" + str(i) for i in range(1, 258)]
+    variables = variables + gracz2
+    bounds = np.zeros((1, M.shape[0]))
+    bounds = np.hstack((bounds, b))
+    P.set_objective(sum(var[variables[k]] * d[0, k] for k in range(d.shape[1])))
+    for i in range(bounds.shape[1]):
+        P.add_constraint(sum(var[variables[k]] * constraint_matrix[i, k] for k in range(len(variables))), min = bounds[0, i])
+        P.add_constraint(sum(var[variables[k]] * constraint_matrix[i, k] for k in range(len(variables))), max = bounds[0, i])
+        if(i%50==0):
+            print i
+    print('Optymalna wartość funkcji celu = ', P.solve())
+    return
+ 
+result = solve_problem_1()
+print(result)
