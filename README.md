@@ -20,4 +20,4 @@ Projekt 1: https://github.com/kglowacka/Optymalizacja/tree/master/Projekt%201 (w
 
 Projekt 2: (wraz z Mateuszem Dolińskim i Michałem Kozyrą)
 
-Projekt 3: (wraz z Mateuszem Dolińskim i Michałem Kozyrą)
+Projekt 3: https://github.com/kglowacka/Optymalizacja/tree/master/Projekt%203 (wraz z Mateuszem Dolińskim i Michałem Kozyrą)
