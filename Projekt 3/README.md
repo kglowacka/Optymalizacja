@@ -1,4 +1,4 @@
-Projekt 1 - Spy Union
+Projekt 3 - Spy Union
 
 Autorzy: Mateusz Doliński, Katarzyna Głowacka, Michał Kozyra
 
